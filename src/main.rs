@@ -102,6 +102,68 @@ impl Block {
     }
 }
 
+enum Line {
+    Event {
+        name: String,
+        line: Vec<Block>,
+    },
+    Function {
+        name: String,
+        args: Vec<Primitive>,
+        line: Vec<Block>,
+    },
+}
+
+impl Line {
+    fn line(&self) -> &Vec<Block> {
+        match self {
+            Self::Event { name, line } => line,
+            Self::Function { name, args, line } => line,
+        }
+    }
+
+    fn contents_to_json(&self) -> Vec<serde_json::Value> {
+        let mut ln: Vec<serde_json::Value> = vec![];
+
+        for i in self.line() {
+            ln.push(i.to_json());
+        }
+
+        ln
+    }
+
+    pub fn to_json(&self) -> serde_json::Value {
+        let mut ln: Vec<serde_json::Value> = vec![];
+
+        ln.push(match self {
+            Self::Event { name, line } => {
+                json!({
+                    "id": "block",
+                    "block": "event",
+                    "args": {
+                        "items": []
+                    },
+                    "action": name
+                })
+            }
+            Self::Function { name, args, line } => {
+                json!({
+                    "id": "block",
+                    "block": "func",
+                    "args": "fork",
+                    "data": name
+                })
+            }
+        });
+
+        let mut g = self.contents_to_json();
+
+        ln.append(&mut g);
+
+        json!(ln)
+    }
+}
+
 fn main() {
     println!("this compiled")
 }
