@@ -57,6 +57,27 @@ impl Primitive {
     }
 }
 
+struct Chest {
+    contents: Vec<Primitive>,
+}
+
+impl Chest {
+    fn to_json(&self) -> serde_json::Value {
+        let mut args: Vec<serde_json::Value> = vec![];
+
+        for i in &self.contents {
+            args.push(json!({
+                "item": i.to_json(),
+                "slot": args.len()
+            }));
+        }
+
+        json!({
+            "items": args
+        })
+    }
+}
+
 enum BlockType {
     PlayerAction,
     SetVar,
@@ -76,7 +97,7 @@ impl BlockType {
 struct Block {
     block: BlockType,
     data: String,
-    args: Vec<Primitive>,
+    args: Chest,
 }
 
 impl Block {
@@ -86,7 +107,7 @@ impl Block {
                 json!({
                     "id": "block",
                     "block": self.block.name(),
-                    "args": "hi",
+                    "args": self.args.to_json(),
                     "data": self.data
                 })
             }
@@ -94,7 +115,7 @@ impl Block {
                 json!({
                     "id": "block",
                     "block": self.block.name(),
-                    "args": "hi",
+                    "args": self.args.to_json(),
                     "action": self.data
                 })
             }
@@ -109,7 +130,7 @@ enum Line {
     },
     Function {
         name: String,
-        args: Vec<Primitive>,
+        args: Chest,
         line: Vec<Block>,
     },
 }
@@ -150,7 +171,7 @@ impl Line {
                 json!({
                     "id": "block",
                     "block": "func",
-                    "args": "fork",
+                    "args": args.to_json(),
                     "data": name
                 })
             }
@@ -190,7 +211,9 @@ fn main() {
         line: vec![Block {
             block: BlockType::PlayerAction,
             data: "SendMessage".to_string(),
-            args: vec![],
+            args: Chest {
+                contents: vec![Primitive::NumberValue(64.3)],
+            },
         }],
     };
 
