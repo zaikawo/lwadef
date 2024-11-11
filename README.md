@@ -1,4 +1,5 @@
 # lwadef
+*(Lua With A Diamondfire Extract Flavor)*
 
 Compiles Lua files to DiamondFire GZIP Templates.
 
