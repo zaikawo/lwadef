@@ -164,6 +164,37 @@ impl Line {
     }
 }
 
+struct Program {
+    lines: Vec<Line>,
+}
+
+impl Program {
+    pub fn compile(&self) -> serde_json::Value {
+        let mut ret: Vec<serde_json::Value> = vec![];
+
+        for i in &self.lines {
+            ret.push(i.to_json())
+        }
+
+        json!({
+            "blocks": ret
+        })
+    }
+}
+
 fn main() {
-    println!("this compiled")
+    println!("this compiled");
+
+    let m = Line::Event {
+        name: "Join".to_string(),
+        line: vec![Block {
+            block: BlockType::PlayerAction,
+            data: "SendMessage".to_string(),
+            args: vec![],
+        }],
+    };
+
+    let p = Program { lines: vec![m] };
+
+    println!("{}", p.compile().to_string())
 }
