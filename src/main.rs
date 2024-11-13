@@ -2,7 +2,7 @@ mod block;
 use block::{Block, BlockType, Chest, Line, Primitive, Program};
 
 mod compiler;
-use compiler::parse_file;
+use compiler::{parse_file, Compiler};
 
 use clap::Parser;
 
@@ -23,5 +23,11 @@ fn main() {
 
     let out = parse_file(&args.names);
 
-    println!("");
+    let compiler = Compiler::from(out, false);
+
+    let ln = &compiler.into_program();
+
+    let cork = ln.compile().to_string();
+
+    println!("-- OUT: --\n{0}", cork);
 }
