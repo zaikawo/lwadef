@@ -23,9 +23,5 @@ fn main() {
 
     let out = parse_file(&args.names);
 
-    let ball = out.nodes();
-
-    let stmts = ball.stmts();
-
     println!("");
 }
