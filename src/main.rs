@@ -12,7 +12,11 @@ struct Args {
     #[arg(index = 1)]
     names: String,
 
-    #[arg(short = 'v')]
+    #[arg(
+        short = 'v',
+        long = "verbose",
+        help = "Shows compilation documentation."
+    )]
     verbose: bool,
 }
 
@@ -23,7 +27,7 @@ fn main() {
 
     let out = parse_file(&args.names);
 
-    let compiler = Compiler::from(out, false);
+    let compiler = Compiler::from(out, args.verbose);
 
     let ln = &compiler.into_program();
 

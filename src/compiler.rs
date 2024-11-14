@@ -22,6 +22,10 @@ pub fn parse_file(file: &str) -> ast::Ast {
     return ast;
 }
 
+fn get_punc_values<T>(punc: &ast::punctuated::Punctuated<T>) -> Vec<T> {
+    punc.into_pairs().map(ast::Pair::value).collect()
+}
+
 pub struct Compiler {
     pub ast: ast::Ast,
     pub verbose: bool,
@@ -29,13 +33,16 @@ pub struct Compiler {
 
 impl Compiler {
     pub fn into_program(&self) -> Program {
-        Program {
+        self.document("Starting compilatiom.");
+        let p = Program {
             lines: self.compile_ast(&self.ast),
-        }
+        };
+        self.document("Ended compilation.");
+        p
     }
 
-    pub fn from(ast: ast::Ast, ver: bool) -> Self {
-        Self { ast, verbose: ver }
+    pub fn from(ast: ast::Ast, verbose: bool) -> Self {
+        Self { ast, verbose }
     }
 
     fn document(&self, doc: &str) {
@@ -59,7 +66,8 @@ impl Compiler {
     fn compile_line(&self, statement: &ast::Stmt) -> Line {
         match statement {
             ast::Stmt::FunctionDeclaration(func) => {
-                let mut contents: Vec<Block> = vec![];
+                self.document("Compiling event.");
+                let mut contents: Vec<Block> = self.compile_block(func.body().block());
 
                 let mut line: Line = Line::Event {
                     name: func.name().names().to_string(),
@@ -68,7 +76,8 @@ impl Compiler {
                 line
             }
             ast::Stmt::LocalFunction(func) => {
-                let mut contents: Vec<Block> = vec![];
+                self.document("Compiling function.");
+                let mut contents: Vec<Block> = self.compile_block(func.body().block());
 
                 let mut line: Line = Line::Function {
                     name: func.name().to_string(),
@@ -82,5 +91,42 @@ impl Compiler {
                 line: vec![],
             },
         }
+    }
+
+    fn compile_block(&self, block: &ast::Block) -> Vec<Block> {
+        let mut res: Vec<Block> = vec![];
+
+        for smt in block.stmts() {
+            match smt {
+                ast::Stmt::Assignment(asg) => {
+                    res.push(self.compile_assignment(asg));
+                }
+                _ => {}
+            };
+        }
+
+        res
+    }
+
+    fn compile_assignment(&self, assignment: &ast::Assignment) -> Block {
+        let vars: Vec<ast::Var> = get_punc_values(assignment.variables());
+        let exprs: Vec<ast::Expression> = get_punc_values(assignment.expressions());
+    }
+
+    fn compile_expression(&self, expression: &ast::Expression) -> block::Primitive {
+        match expression {
+            ast::Expression::Number(token) => {
+                let Ok(tkn) = token.to_string().parse::<f64>() else {
+                    panic!("parse float error")
+                };
+
+                block::Primitive::NumberValue(tkn)
+            }
+            _ => block::Primitive::NumberValue(0.0),
+        }
+    }
+
+    fn compile_chest(&self, punc: ast::punctuated::Punctuated<ast::Parameter>) -> Chest {
+        Chest { contents: vec![] }
     }
 }
