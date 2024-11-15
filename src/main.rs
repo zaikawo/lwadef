@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 mod block;
 use block::{Block, BlockType, Chest, Line, Primitive, Program};
 

@@ -7,6 +7,11 @@ pub enum VariableScope {
     Save,
 }
 
+pub struct Variable {
+    pub name: String,
+    pub scope: VariableScope,
+}
+
 type DFNumber = f64;
 
 pub enum Primitive {
@@ -15,7 +20,7 @@ pub enum Primitive {
     ComponentValue(String),
     LocationValue(DFNumber, DFNumber, DFNumber, DFNumber, DFNumber),
     VectorValue(DFNumber, DFNumber, DFNumber),
-    Variable(String, VariableScope),
+    Variable(Variable),
 }
 
 impl Primitive {

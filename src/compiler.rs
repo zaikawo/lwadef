@@ -22,8 +22,14 @@ pub fn parse_file(file: &str) -> ast::Ast {
     return ast;
 }
 
-fn get_punc_values<T>(punc: &ast::punctuated::Punctuated<T>) -> Vec<T> {
-    punc.into_pairs().map(ast::Pair::value).collect()
+fn get_punc_values<T>(punc: &ast::punctuated::Punctuated<T>) -> Vec<&T> {
+    let mut res: Vec<&T> = Vec::with_capacity(punc.len());
+
+    for pair in punc.pairs() {
+        res.push(pair.value());
+    }
+
+    res
 }
 
 pub struct Compiler {
@@ -108,9 +114,16 @@ impl Compiler {
         res
     }
 
-    fn compile_assignment(&self, assignment: &ast::Assignment) -> Block {
-        let vars: Vec<ast::Var> = get_punc_values(assignment.variables());
-        let exprs: Vec<ast::Expression> = get_punc_values(assignment.expressions());
+    fn compile_assignment(&self, assignment: &ast::Assignment) -> Vec<Block> {
+        let vars: Vec<&ast::Var> = get_punc_values(assignment.variables());
+        let exprs: Vec<&ast::Expression> = get_punc_values(assignment.expressions());
+
+        let mut res: Vec<Block>;
+
+        for idx in 0..vars.len() {
+            let var = self.vars[idx];
+            let exp = exprs[idx];
+        }
     }
 
     fn compile_expression(&self, expression: &ast::Expression) -> block::Primitive {
@@ -122,7 +135,38 @@ impl Compiler {
 
                 block::Primitive::NumberValue(tkn)
             }
+            ast::Expression::Var(var) => block::Primitive::Variable(self.compile_var(var)),
             _ => block::Primitive::NumberValue(0.0),
+        }
+    }
+
+    fn compile_var(&self, var: &ast::Var) -> block::Variable {
+        let mut name = &*var.to_string();
+        let mut scope = block::VariableScope::Line;
+
+        if name.len() > 2 {
+            match &name[..2] {
+                "S_" => {
+                    name = &name[2..];
+                    scope = block::VariableScope::Save;
+                }
+                "G_" => {
+                    name = &name[2..];
+                    scope = block::VariableScope::Global;
+                }
+                "L_" => {
+                    name = &name[2..];
+                    scope = block::VariableScope::Local;
+                }
+                _ => {}
+            }
+        } else if name == "S_" || name == "G_" || name == "L_" {
+            panic!("You got de long valiable name !")
+        }
+
+        block::Variable {
+            name: name.to_owned(),
+            scope,
         }
     }
 
