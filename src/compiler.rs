@@ -9,7 +9,7 @@ use std::path::Path;
 pub fn parse_file(file: &str) -> ast::Ast {
     let path: &Path = Path::new(file);
 
-    let Ok(code) = read_to_string(&path) else {
+    let Ok(code) = read_to_string(path) else {
         panic!("Path is invalid")
     };
 
@@ -19,7 +19,7 @@ pub fn parse_file(file: &str) -> ast::Ast {
         panic!("Code is malformed or you fuucking suck");
     };
 
-    return ast;
+    ast
 }
 
 fn get_punc_values<T>(punc: &ast::punctuated::Punctuated<T>) -> Vec<&T> {
@@ -38,7 +38,7 @@ pub struct Compiler {
 }
 
 impl Compiler {
-    pub fn into_program(&self) -> Program {
+    pub fn program(&self) -> Program {
         self.document("Starting compilatiom.");
         let p = Program {
             lines: self.compile_ast(&self.ast),
@@ -105,7 +105,11 @@ impl Compiler {
         for smt in block.stmts() {
             match smt {
                 ast::Stmt::Assignment(asg) => {
-                    res.push(self.compile_assignment(asg));
+                    let asgs = self.compile_assignment(asg);
+
+                    for a in asgs {
+                        res.push(a);
+                    }
                 }
                 _ => {}
             };
@@ -118,20 +122,35 @@ impl Compiler {
         let vars: Vec<&ast::Var> = get_punc_values(assignment.variables());
         let exprs: Vec<&ast::Expression> = get_punc_values(assignment.expressions());
 
-        let mut res: Vec<Block>;
+        let mut res: Vec<Block> = vec![];
 
         for idx in 0..vars.len() {
-            let var = self.vars[idx];
+            let var = vars[idx];
             let exp = exprs[idx];
+
+            res.push(block::Block {
+                block: block::BlockType::SetVar,
+                data: "=".to_string(),
+                args: Chest {
+                    contents: vec![
+                        block::Primitive::Variable(self.compile_var(var)),
+                        self.compile_expression(exp),
+                    ],
+                },
+            })
         }
+
+        res
     }
 
     fn compile_expression(&self, expression: &ast::Expression) -> block::Primitive {
         match expression {
             ast::Expression::Number(token) => {
-                let Ok(tkn) = token.to_string().parse::<f64>() else {
-                    panic!("parse float error")
-                };
+                //let Ok(tkn) = token.to_string().parse::<f64>() else {
+                //    panic!("parse float error {}", token.to_string())
+                //};
+
+                let tkn: f64 = token.to_string().trim().parse().unwrap();
 
                 block::Primitive::NumberValue(tkn)
             }
@@ -141,7 +160,8 @@ impl Compiler {
     }
 
     fn compile_var(&self, var: &ast::Var) -> block::Variable {
-        let mut name = &*var.to_string();
+        let binding = var.to_string();
+        let mut name = &*binding.trim();
         let mut scope = block::VariableScope::Line;
 
         if name.len() > 2 {
@@ -170,7 +190,11 @@ impl Compiler {
         }
     }
 
-    fn compile_chest(&self, punc: ast::punctuated::Punctuated<ast::Parameter>) -> Chest {
+    fn compile_chest(&self, punc: &ast::punctuated::Punctuated<ast::Parameter>) -> Chest {
+        //let pars: Vec<&ast::Parameter> = get_punc_values(punc);
+        //
+        //let res: Vec<block::Primitive> = vec![];
+
         Chest { contents: vec![] }
     }
 }

@@ -30,9 +30,13 @@ fn main() {
 
     let compiler = Compiler::from(out, args.verbose);
 
-    let ln = &compiler.into_program();
+    let ln = &compiler.program();
 
-    let cork = ln.compile().to_string();
+    let cork = ln.compile();
 
-    println!("-- OUT: --\n{0}", cork);
+    println!("-- OUT: --\n");
+
+    for cor in cork {
+        println!("{}\n", cor);
+    }
 }

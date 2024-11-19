@@ -7,6 +7,17 @@ pub enum VariableScope {
     Save,
 }
 
+impl VariableScope {
+    fn id(&self) -> &'static str {
+        match self {
+            Self::Line => "line",
+            Self::Local => "local",
+            Self::Global => "game",
+            Self::Save => "save",
+        }
+    }
+}
+
 pub struct Variable {
     pub name: String,
     pub scope: VariableScope,
@@ -50,6 +61,15 @@ impl Primitive {
                     "id": "num",
                     "data": {
                         "name": n.to_string()
+                    }
+                })
+            }
+            Self::Variable(var) => {
+                json!({
+                    "id": "var",
+                    "data": {
+                        "name": var.name,
+                        "scope": var.scope.id()
                     }
                 })
             }
@@ -195,15 +215,29 @@ pub struct Program {
 }
 
 impl Program {
-    pub fn compile(&self) -> serde_json::Value {
-        let mut ret: Vec<serde_json::Value> = vec![];
+    pub fn compile(&self) -> Vec<String> {
+        let mut ret: Vec<String> = vec![];
 
         for i in &self.lines {
-            ret.push(i.to_json())
+            let js: String = json!({
+                "blocks": i.to_json()
+            })
+            .to_string();
+
+            let mut e = flate2::write::GzEncoder::new(Vec::new(), flate2::Compression::default());
+
+            use base64::prelude::*;
+            use std::io::prelude::*;
+
+            e.write_all(js.as_str().as_bytes()).unwrap();
+
+            let bytes = e.finish().unwrap();
+
+            let parsed = BASE64_STANDARD.encode(bytes);
+
+            ret.push(parsed);
         }
 
-        json!({
-            "blocks": ret
-        })
+        ret
     }
 }
